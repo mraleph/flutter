@@ -188,6 +188,7 @@ Future<Process> startProcess(
   List<String> arguments, {
   Map<String, String> environment,
   String workingDirectory,
+  bool includeParentEnvironment: true,
 }) async {
   final String command = '$executable ${arguments?.join(" ") ?? ""}';
   print('\nExecuting: $command');
@@ -197,6 +198,7 @@ Future<Process> startProcess(
     <String>[executable]..addAll(arguments),
     environment: environment,
     workingDirectory: workingDirectory ?? cwd,
+    includeParentEnvironment: includeParentEnvironment,
   );
   final ProcessInfo processInfo = new ProcessInfo(command, process);
   _runningProcesses.add(processInfo);
@@ -232,8 +234,9 @@ Future<int> exec(
   List<String> arguments, {
   Map<String, String> environment,
   bool canFail: false,
+  bool includeParentEnvironment: true,
 }) async {
-  final Process process = await startProcess(executable, arguments, environment: environment);
+  final Process process = await startProcess(executable, arguments, environment: environment, includeParentEnvironment: includeParentEnvironment);
 
   final Completer<Null> stdoutDone = new Completer<Null>();
   final Completer<Null> stderrDone = new Completer<Null>();
@@ -267,8 +270,9 @@ Future<String> eval(
   List<String> arguments, {
   Map<String, String> environment,
   bool canFail: false,
+  bool includeParentEnvironment: true,
 }) async {
-  final Process process = await startProcess(executable, arguments, environment: environment);
+  final Process process = await startProcess(executable, arguments, environment: environment, includeParentEnvironment: includeParentEnvironment);
 
   final StringBuffer output = new StringBuffer();
   final Completer<Null> stdoutDone = new Completer<Null>();
@@ -302,8 +306,16 @@ Future<int> flutter(String command, {
   Map<String, String> environment,
 }) {
   final List<String> args = <String>[command]..addAll(options);
+  var includeParentEnvironment = true;
+  if (environment == null &&
+      Platform.environment.containsKey('FLUTTER_ENGINE') &&
+      !options.any((opt) => opt.contains('--local-engine'))) {
+    environment = new Map<String, String>.from(Platform.environment);
+    environment.remove('FLUTTER_ENGINE');
+    includeParentEnvironment = false;
+  }
   return exec(path.join(flutterDirectory.path, 'bin', 'flutter'), args,
-      canFail: canFail, environment: environment);
+      canFail: canFail, environment: environment, includeParentEnvironment: includeParentEnvironment);
 }
 
 /// Runs a `flutter` command and returns the standard output as a string.
@@ -313,8 +325,16 @@ Future<String> evalFlutter(String command, {
   Map<String, String> environment,
 }) {
   final List<String> args = <String>[command]..addAll(options);
+  var includeParentEnvironment = true;
+  if (environment == null &&
+      Platform.environment.containsKey('FLUTTER_ENGINE') &&
+      !options.any((opt) => opt.contains('--local-engine'))) {
+    environment = new Map<String, String>.from(Platform.environment);
+    environment.remove('FLUTTER_ENGINE');
+    includeParentEnvironment = false;
+  }
   return eval(path.join(flutterDirectory.path, 'bin', 'flutter'), args,
-      canFail: canFail, environment: environment);
+      canFail: canFail, environment: environment, includeParentEnvironment: includeParentEnvironment);
 }
 
 String get dartBin =>
