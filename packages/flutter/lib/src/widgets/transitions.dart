@@ -561,7 +561,7 @@ class AlignTransition extends AnimatedWidget {
 ///   _SpinnerState createState() => new _SpinnerState();
 /// }
 ///
-/// class _SpinnerState extends State<Spinner> with SingleTickerProviderStateMixin {
+/// class _SpinnerState extends State<Spinner> with SingleTickerProviderStateMixin<Spinner> {
 ///   AnimationController _controller;
 ///
 ///   @override
